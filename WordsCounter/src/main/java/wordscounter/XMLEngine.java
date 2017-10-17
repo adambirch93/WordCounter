@@ -1,10 +1,5 @@
 package wordscounter;
 
-import com.clearspring.analytics.stream.frequency.CountMinSketch;
-import com.google.common.hash.HashFunction;
-import com.google.common.hash.Hashing;
-import com.sun.org.apache.xml.internal.serializer.utils.Utils;
-import net.agkn.hll.HLL;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -14,10 +9,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import org.apache.log4j.Logger;
-import java.util.stream.LongStream;
-import net.agkn.hll.HLLType;
-import net.agkn.hll.serialization.ISchemaVersion;
-import net.agkn.hll.serialization.SerializationUtil;
 import org.apache.log4j.BasicConfigurator;
 
 /**
@@ -33,11 +24,11 @@ public class XMLEngine {
         this.server = server;
     }
     
-    public boolean readFile(int startIndex, int lines)
+    public boolean readFile(String source, int startIndex, int lines)
     {
         HashMap<String, Object> wordMap  = new HashMap<>();
         try {
-            File file = new File("C:\\Users\\Adam\\Downloads\\enwiki-20170701-pages-meta-history1.xml-p10p2123");
+            File file = new File(source);
             FileReader fileReader = new FileReader(file);
             BufferedReader bufferedReader = new BufferedReader(fileReader);
             StringBuilder stringBuffer = new StringBuilder();
