@@ -13,6 +13,7 @@ public class WordsCounter {
     public static void main(String[] args) {
         String source = "", host = "";
         int port = -1, lines = 100;
+        boolean test = true;
         for (int i = 0; i < args.length; i++) {
             if ("-source".equals(args[i]) && i+1 < args.length) {
                 source = args[i+1];
@@ -23,6 +24,9 @@ public class WordsCounter {
             }
             if ("-lines".equals(args[i]) && i+1 < args.length) {
                 lines = Integer.valueOf(args[i+1]);                
+            }
+            if ("-test".equals(args[i]) && i+1 < args.length) {
+                test = Boolean.valueOf(args[i+1]);                
             }
         }
         
@@ -35,7 +39,7 @@ public class WordsCounter {
             XMLEngine engine = new XMLEngine(db);
             int counter = 0;
             
-            while (engine.readFile(source, startIndex, lines) && counter<5)
+            while (engine.readFile(source, startIndex, lines) && (counter<5 || !test))
             {
                 startIndex = db.getUnit(lines);
                 counter++;
