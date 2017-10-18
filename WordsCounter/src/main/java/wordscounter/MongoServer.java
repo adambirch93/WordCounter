@@ -1,20 +1,14 @@
 package wordscounter;
 
 import com.mongodb.BasicDBObject;
-import com.mongodb.DBCollection;
-import com.mongodb.DBCursor;
 import com.mongodb.MongoClient;
-import com.mongodb.client.FindIterable;
-import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.MongoCollection;
-import static com.mongodb.client.model.Aggregates.limit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.bson.Document; 
-import org.bson.conversions.Bson;
 
 /**
  *
@@ -24,18 +18,25 @@ public class MongoServer {
     MongoClient mongoClient = null;
     MongoDatabase db = null;
     
-    public MongoServer()
+    /**
+     * Creates the MongoDB client server and the dictionary collection
+     * @param host The host to connect to from cmd
+     * @param port The port to connect to from cmd
+     */
+    public MongoServer(String host, int port)
     {
-        //connect to server
-        mongoClient = new MongoClient( "Adam" , 27017 );
-        //create db
+        mongoClient = new MongoClient( host , port );
         db = mongoClient.getDatabase("wordcountdb");
         if (db.getCollection("dictionary")==null) {
             db.createCollection("dictionary");    
         }
     }
     
-    public void addHashMap(HashMap<String, Object> wordMap)
+    /**
+     * Inserts the hashmap into the MongoDB
+     * @param wordMap The hashmap to be inserted
+     */
+    public void insertHashMap(HashMap<String, Object> wordMap)
     {
         MongoCollection<Document> dictionary = db.getCollection("dictionary");
         
@@ -45,11 +46,32 @@ public class MongoServer {
             items.put("v", entry.getValue());
             dictionary.insertOne(new Document(items));
         }
-        //Get results
-//        db.dictionary.aggregate([{$group:{_id:"$k", total:{$sum:"$v"}}}])
     }
     
-    public Document getMostOccurences()
+    /**
+     * The most occurring word in the file
+     * @return String containing the most occurring and the total
+     */
+    public String getMostOccurrences()
+    {
+        return getOccurrences(-1);
+    }
+    
+    /**
+     * The least occurring word in the file
+     * @return String containing the least occurring and the total
+     */
+    public String getLeastOccurrences()
+    {
+        return getOccurrences(1);
+    }
+    
+    /**
+     * The occurrences function to search the MongoDB
+     * @param sort Whether the most(-1) or least(1) frequent is desired
+     * @return A string containing the value and the total
+     */
+    private String getOccurrences(int sort)
     {
         MongoCollection<Document> dictionary = db.getCollection("dictionary");
         List<BasicDBObject> group = new ArrayList<>();
@@ -59,26 +81,18 @@ public class MongoServer {
             )
         ));
         group.add(new BasicDBObject(
-                "$sort", new BasicDBObject("total", -1)
+                "$sort", new BasicDBObject("total", sort)
         ));
-        return dictionary.aggregate(group).first();
+        Document occurences = dictionary.aggregate(group).first();
+        return "Key " + occurences.getString("_id") + " Total " + occurences.getInteger("total");
     }
     
-    public Document getLeastOccurences()
-    {
-        MongoCollection<Document> dictionary = db.getCollection("dictionary");
-        List<BasicDBObject> group = new ArrayList<>();
-        group.add(new BasicDBObject(
-            "$group", new BasicDBObject("_id", "$k").append(
-                "total", new BasicDBObject( "$sum", "$v" )
-            )
-        ));
-        group.add(new BasicDBObject(
-                "$sort", new BasicDBObject("total", 1)
-        ));
-        return dictionary.aggregate(group).first();
-    }
-    
+    /**
+     * Gets the unit of work to be done by the user finding the start
+     * and end index of the lines of the xml
+     * @param lines The number of lines to be read
+     * @return The starting index within the file
+     */
     public int getUnit(int lines)
     {
         MongoCollection<Document> players = db.getCollection("players");
@@ -99,6 +113,11 @@ public class MongoServer {
         return next;
     }
     
+    /**
+     * A fail safe when running the program has failed
+     * @param startIndex The beginning of the computation
+     * @param lines The unit of work for the computation
+     */
     public void failedUnit(int startIndex, int lines)
     {
         MongoCollection<Document> players = db.getCollection("players");
@@ -112,6 +131,9 @@ public class MongoServer {
         players.updateOne(query, document);
     }
 
+    /**
+     * To close the MongoDB connection on exit
+     */
     public void logout()
     {
         if(mongoClient != null)
